@@ -73,7 +73,7 @@
             opacity: 0;
         }
 
-        /* Very thin animated green outline that travels around the message box border */
+        /* Snake-like animated green outline that travels around the message box border */
         #pinned-container.fade-in .bg-shade-lower::after {
             content: '';
             position: absolute;
@@ -91,7 +91,8 @@
                 linear-gradient(0deg, #53fc18, #53fc18) left;
             background-size: 0 1px, 1px 0, 0 1px, 1px 0;
             background-repeat: no-repeat;
-            animation: borderTravel 2s linear infinite;
+            background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+            animation: snakeBorder 3s linear infinite;
         }
 
         /* Make the message box positioned relative for the pseudo-element with smooth size transitions */
@@ -140,26 +141,39 @@
             opacity: 1;
         }
 
-        @keyframes borderTravel {
+        @keyframes snakeBorder {
+            /* Top border appears and travels */
             0% {
                 background-size: 0 1px, 1px 0, 0 1px, 1px 0;
-                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
             }
             25% {
                 background-size: 100% 1px, 1px 0, 0 1px, 1px 0;
-                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+            }
+            /* Right border appears while top stays */
+            37.5% {
+                background-size: 100% 1px, 1px 50%, 0 1px, 1px 0;
             }
             50% {
                 background-size: 100% 1px, 1px 100%, 0 1px, 1px 0;
-                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+            }
+            /* Bottom border appears, top starts disappearing */
+            62.5% {
+                background-size: 50% 1px, 1px 100%, 50% 1px, 1px 0;
             }
             75% {
-                background-size: 100% 1px, 1px 100%, 100% 1px, 1px 0;
-                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                background-size: 0 1px, 1px 100%, 100% 1px, 1px 0;
             }
+            /* Left border appears, right starts disappearing */
+            87.5% {
+                background-size: 0 1px, 1px 50%, 100% 1px, 1px 50%;
+            }
+            /* Complete the cycle - left border fully shown, others hidden */
+            96% {
+                background-size: 0 1px, 1px 0, 50% 1px, 1px 100%;
+            }
+            /* Loop back to start - all borders hidden, ready to restart */
             100% {
-                background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
-                background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+                background-size: 0 1px, 1px 0, 0 1px, 1px 0;
             }
         }
         
