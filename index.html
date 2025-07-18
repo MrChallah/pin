@@ -55,7 +55,7 @@ COMMON ISSUES:
 
         #widget-container {
             min-width: 0px;
-            max-width: 500px;
+            max-width: 340px;
             width: max-content;
             min-height: 77px;
             position: fixed;
@@ -190,21 +190,17 @@ COMMON ISSUES:
         #message-content .emoji {
             font-size: 1.2em;
             vertical-align: middle;
-            margin: 0 1px;
+            margin: 0 2px;
             display: inline-block;
-            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", Arial, sans-serif;
         }
         
-        /* OBS-specific emoji fallbacks */
-        body.obs #message-content .emoji {
-            font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Arial Unicode MS, Arial, sans-serif;
-            font-variant-ligatures: normal;
-            font-feature-settings: "liga" off;
-        }
-        
-        /* Ensure emojis are not affected by text decoration */
-        #message-content .emoji * {
-            text-decoration: none !important;
+        /* Emoji images for OBS compatibility */
+        #message-content .emoji-img {
+            width: 18px;
+            height: 18px;
+            vertical-align: middle;
+            margin: 0 2px;
+            display: inline-block;
         }
 
         @keyframes snakeBorder {
@@ -329,9 +325,7 @@ COMMON ISSUES:
     </style>
 </head>
 <body>
-    <!-- OBS Debug Status -->
-    <div id="obs-status" style="position: fixed; top: 0; left: 0; background: rgba(0,0,0,0.8); color: white; padding: 5px; font-size: 12px; z-index: 9999; display: none; max-width: 300px; word-wrap: break-word;"></div>
-    
+
     <div id="widget-container">
         <div id="pinned-container">
             <div class="absolute w-full empty:hidden" style="padding-top: 6px; padding-bottom: 6px;">
@@ -397,53 +391,23 @@ COMMON ISSUES:
             isOBS = userAgent.includes('obs') || userAgent.includes('cef') || 
                    window.obsstudio !== undefined || window.OBSWebSocket !== undefined;
             
-            console.log('Environment detection:', {
-                userAgent: navigator.userAgent,
-                isOBS: isOBS,
-                hasObsStudio: window.obsstudio !== undefined,
-                hasOBSWebSocket: window.OBSWebSocket !== undefined
-            });
-            
             return isOBS;
         }
 
         function updateStatus(message) {
             console.log('Status:', message);
-            
-            // Add visible status for OBS debugging
-            if (isOBS) {
-                const statusDiv = document.getElementById('obs-status');
-                if (statusDiv) {
-                    statusDiv.textContent = message;
-                    statusDiv.style.display = 'block';
-                }
-            }
         }
 
         function createBadgeContent(badge) {
-            console.log('🔍 createBadgeContent called with badge:', JSON.stringify(badge, null, 2));
-            
-            // Debug all possible image URL properties
-            console.log('🔍 Badge image properties check:');
-            console.log('  - badge.image_url:', badge.image_url);
-            console.log('  - badge.imageUrl:', badge.imageUrl);
-            console.log('  - badge.image:', badge.image);
-            console.log('  - badge.url:', badge.url);
-            console.log('  - badge.src:', badge.src);
             
             // PRIORITY 1: Handle custom subscriber images first (check multiple possible property names)
             const imageUrl = badge.image_url || badge.imageUrl || badge.image || badge.url || badge.src;
             if (imageUrl && imageUrl.trim()) {
-                console.log('🖼️ Found custom badge image:', imageUrl);
-                return `<img alt="${badge.type || 'Subscriber'}" class="size-[calc(1em*(18/13))]" src="${imageUrl}" onerror="console.error('Failed to load badge image: ${imageUrl}'); this.style.display='none';">`;
+                return `<img alt="${badge.type || 'Subscriber'}" class="size-[calc(1em*(18/13))]" src="${imageUrl}" onerror="this.style.display='none';">`;
             }
             
             // PRIORITY 1.5: Handle subscriber badges with count - fetch custom image from API data
             if (badge.type === 'subscriber' && badge.count) {
-                console.log(`🎖️ Looking for subscriber badge with count: ${badge.count}`);
-                console.log(`🎖️ Available subscriber badges:`, subscriberBadges);
-                console.log(`🎖️ Keys in subscriberBadges:`, Object.keys(subscriberBadges));
-                
                 // Try multiple ways to match the badge count
                 let foundBadgeUrl = null;
                 const possibleKeys = [
@@ -457,7 +421,6 @@ COMMON ISSUES:
                 for (const key of possibleKeys) {
                     if (subscriberBadges[key]) {
                         foundBadgeUrl = subscriberBadges[key];
-                        console.log(`🎖️ Found subscriber badge match with key: ${key} -> ${foundBadgeUrl}`);
                         break;
                     }
                 }
@@ -466,29 +429,19 @@ COMMON ISSUES:
                 if (!foundBadgeUrl && Object.keys(subscriberBadges).length > 0) {
                     const firstKey = Object.keys(subscriberBadges)[0];
                     foundBadgeUrl = subscriberBadges[firstKey];
-                    console.log(`🎖️ Using first available subscriber badge as fallback: ${firstKey} -> ${foundBadgeUrl}`);
                 }
                 
                 // If we found a badge URL, use it
                 if (foundBadgeUrl) {
-                    console.log(`🎖️ Found custom subscriber badge for ${badge.count} months:`, foundBadgeUrl);
-                    return `<img alt="${badge.count}-Month Subscriber" class="size-[calc(1em*(18/13))]" src="${foundBadgeUrl}" onerror="console.error('Failed to load subscriber badge image: ${foundBadgeUrl}'); this.style.display='none';">`;
-                } else {
-                    console.log(`❌ No custom subscriber badge found for ${badge.count} months`);
+                    return `<img alt="${badge.count}-Month Subscriber" class="size-[calc(1em*(18/13))]" src="${foundBadgeUrl}" onerror="this.style.display='none';">`;
                 }
-            } else if (badge.type === 'subscriber') {
-                console.log('❌ Subscriber badge missing count property');
-            } else {
-                console.log('❌ No image URL found for badge:', badge.type);
             }
             
             // PRIORITY 2: Handle gifted subscriber badge specifically
             if (badge.type) {
                 const badgeTypeLower = badge.type.toLowerCase();
-                console.log('🎁 Checking for gifted badge, type:', badgeTypeLower);
                 
                 if (badgeTypeLower.includes('gifted') || badgeTypeLower === 'gifted_sub' || badgeTypeLower.includes('gift')) {
-                    console.log('🎁 Detected gifted subscriber badge!');
                     return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
                         <g clip-path="url(#clip0_31_3197)">
                             <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#2EFAD1"></path>
@@ -505,7 +458,6 @@ COMMON ISSUES:
                 
                 // PRIORITY 3: Handle regular subscriber badges (only if no image and not gifted)
                 if (badgeTypeLower.includes('subscriber') || badgeTypeLower.includes('month') || badgeTypeLower.includes('tier')) {
-                    console.log('⭐ Detected regular subscriber badge (fallback)');
                     return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
                         <g clip-path="url(#clip0_746_28171)">
                             <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint0_linear_746_28171)"></path>
@@ -529,7 +481,6 @@ COMMON ISSUES:
             }
             
             // PRIORITY 4: Fall back to other badge types
-            console.log('🔄 Falling back to createBadgeSVG for type:', badge.type);
             return createBadgeSVG(badge.type);
         }
 
@@ -738,35 +689,32 @@ COMMON ISSUES:
         }
 
         function parseEmotes(content) {
-            console.log('Original content for parsing:', content);
             try {
-                // First, replace [emote:ID:NAME] with actual emote images - use only the ID part
+                // First, replace [emote:ID:NAME] with actual emote images
                 let parsed = content.replace(/\[emote:(\d+):[^\]]+\]/g, function(match, emoteId) {
-                    console.log('Found Kick emote ID:', emoteId);
-                    return '<img src="https://files.kick.com/emotes/' + emoteId + '/fullsize" alt="emote-' + emoteId + '" style="height: 18px; width: auto; vertical-align: middle; margin: 0 2px;" onerror="console.error(\'Failed to load emote: ' + emoteId + '\'); this.style.display=\'none\';">';
+                    return '<img src="https://files.kick.com/emotes/' + emoteId + '/fullsize" alt="emote-' + emoteId + '" style="height: 18px; width: auto; vertical-align: middle; margin: 0 2px;" onerror="this.style.display=\'none\';">';
                 });
                 
-                // Enhanced Unicode emoji detection for better OBS compatibility
-                // More comprehensive emoji regex that covers additional ranges
-                const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]|[\u{238C}-\u{2454}]|[\u{20D0}-\u{20FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F200}-\u{1F2FF}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{2B50}-\u{2B55}]|[\u{203C}\u{2049}\u{20E3}\u{2122}\u{2139}\u{2194}-\u{2199}\u{21A9}-\u{21AA}\u{231A}-\u{231B}\u{2328}\u{23CF}\u{23E9}-\u{23F3}\u{23F8}-\u{23FA}\u{24C2}\u{25AA}-\u{25AB}\u{25B6}\u{25C0}\u{25FB}-\u{25FE}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{3030}\u{303D}\u{3297}\u{3299}]|[\u{1F004}\u{1F0CF}\u{1F170}-\u{1F171}\u{1F17E}-\u{1F17F}\u{1F18E}\u{1F191}-\u{1F19A}\u{1F201}-\u{1F202}\u{1F21A}\u{1F22F}\u{1F232}-\u{1F23A}\u{1F250}-\u{1F251}])/gu;
-                
-                parsed = parsed.replace(emojiRegex, function(match) {
-                    console.log('Found emoji:', match, 'Unicode:', match.codePointAt(0)?.toString(16));
+                // Handle Unicode emojis - use Twemoji images for OBS compatibility
+                if (isOBS) {
+                    // For OBS, convert emojis to Twemoji images for better compatibility
+                    const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{2B50}\u{2764}\u{1F494}\u{1F48B}\u{1F525}\u{1F44D}\u{1F44E}\u{1F602}\u{1F914}\u{1F60D}\u{1F621}\u{1F622}\u{1F923}\u{1F970}])/gu;
                     
-                    // For OBS, add additional attributes to help with rendering
-                    const obsAttributes = isOBS ? ' data-emoji="true" style="font-family: \'Segoe UI Emoji\', \'Apple Color Emoji\', \'Noto Color Emoji\', Arial; font-variant-emoji: emoji; font-weight: normal;"' : '';
-                    
-                    return '<span class="emoji"' + obsAttributes + '>' + match + '</span>';
-                });
-                
-                console.log('Parsed content with emojis:', parsed);
-                console.log('Environment:', { isOBS: isOBS, userAgent: navigator.userAgent });
+                    parsed = parsed.replace(emojiRegex, function(match) {
+                        // Convert emoji to hex codepoint for Twemoji URL
+                        const codepoint = match.codePointAt(0).toString(16);
+                        return '<img class="emoji-img" src="https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/' + codepoint + '.png" alt="' + match + '" onerror="this.outerHTML=\'' + match + '\';">';
+                    });
+                } else {
+                    // For regular browsers, use simple emoji wrapping
+                    const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}])/gu;
+                    parsed = parsed.replace(emojiRegex, '<span class="emoji">$1</span>');
+                }
                 
                 return parsed;
             } catch (error) {
-                console.error('Error parsing emotes and emojis:', error);
-                updateStatus('Error parsing message content');
-                return content; // Return original content if parsing fails
+                console.error('Error parsing emotes:', error);
+                return content;
             }
         }
 
@@ -774,17 +722,12 @@ COMMON ISSUES:
             const pinnedContainer = document.getElementById('pinned-container');
             
             if (currentPinned && currentPinned.content) {
-                console.log('Displaying pinned message:', currentPinned);
-                console.log('Full pinned object:', JSON.stringify(currentPinned, null, 2));
                 
                 // Extract message details
                 const senderName = currentPinned.sender?.username || 'Unknown';
                 const messageContent = currentPinned.content || '';
                 const senderColor = currentPinned.sender?.identity?.color || '#FFFFFF';
                 const badges = currentPinned.sender?.identity?.badges || [];
-                
-                console.log('Message content before parsing:', messageContent);
-                console.log('Badges:', badges);
                 
                 // Check if container is already visible for smooth transition
                 const isAlreadyVisible = pinnedContainer.classList.contains('fade-in');
@@ -812,27 +755,15 @@ COMMON ISSUES:
             document.getElementById('sender').style.color = senderColor;
             document.getElementById('message-content').innerHTML = parseEmotes(messageContent);
             
-            console.log('🔍 FULL PINNED MESSAGE DATA INSPECTION:');
-            console.log('🔍 currentPinned object:', JSON.stringify(currentPinned, null, 2));
-            console.log('🔍 Sender object:', JSON.stringify(currentPinned.sender, null, 2));
-            console.log('🔍 Identity object:', JSON.stringify(currentPinned.sender?.identity, null, 2));
-            console.log('🔍 Looking for subscriber data in all possible locations...');
-            
             // Update badges - create Kick's exact structure
             const badgeContainer = document.getElementById('user-badge-container');
             badgeContainer.innerHTML = '';
             
-            console.log('🎯 STARTING BADGE PROCESSING - Total badges found:', badges.length);
-            console.log('🎯 All badges data:', JSON.stringify(badges, null, 2));
-            
             badges.forEach((badge, index) => {
-                console.log(`\n🎯 Processing badge ${index + 1}/${badges.length}:`, badge);
                 // Show badges that are NOT explicitly set to false and have a valid type or image_url
                 // Be more lenient - check if active is undefined or true, not just !== false
                 const isActive = badge.active === undefined || badge.active === true || badge.active !== false;
                 const hasTypeOrImage = badge.type || badge.image_url || badge.imageUrl || badge.image || badge.url || badge.src;
-                
-                console.log('Badge check - isActive:', isActive, 'hasTypeOrImage:', hasTypeOrImage);
                 
                 if (isActive && hasTypeOrImage) {
                     const badgeContent = createBadgeContent(badge);
@@ -852,16 +783,10 @@ COMMON ISSUES:
                                 badge.type.toLowerCase().includes('gift')
                             ));
                         const dataState = isSubscriberBadge ? 'delayed-open' : 'closed';
-                        console.log('🏷️ Badge data-state:', dataState, 'for badge:', badge.type || 'image badge');
                         
                         badgeWrapper.innerHTML = `<div data-state="${dataState}">${badgeContent}</div>`;
                         badgeContainer.appendChild(badgeWrapper);
-                        console.log('✅ Successfully added badge:', badge.type || 'image badge', 'active status:', badge.active, 'dataState:', dataState);
-                    } else {
-                        console.warn('❌ Failed to create badge content for:', badge.type, 'Full badge:', badge);
                     }
-                } else {
-                    console.log('⏭️ Skipping badge - isActive:', isActive, 'hasTypeOrImage:', hasTypeOrImage, 'badge:', badge);
                 }
             });
         }
@@ -1007,12 +932,7 @@ COMMON ISSUES:
                 // Use the correct WebSocket URL found from Kick.com
                 const wsUrl = `wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false`;
                 
-                console.log('Attempting WebSocket connection:', {
-                    url: wsUrl,
-                    chatroomId: chatroomId,
-                    isOBS: isOBS,
-                    attempt: reconnectAttempts + 1
-                });
+
                 
                 ws = new WebSocket(wsUrl);
                 
@@ -1047,22 +967,19 @@ COMMON ISSUES:
                         }
                     };
                     
-                    console.log('Sending subscription message:', subscribeMessage);
+
                     ws.send(JSON.stringify(subscribeMessage));
                 };
 
                 ws.onmessage = function(event) {
                     try {
                         const message = JSON.parse(event.data);
-                        console.log('WebSocket message received:', message);
                         
                         if (message.event === 'pusher:connection_established') {
                             isConnected = true;
                             updateStatus('Connected! Waiting for pinned messages...');
-                            console.log('Pusher connection established');
                         } else if (message.event === 'pusher_internal:subscription_succeeded') {
                             updateStatus('Subscribed! Ready to receive pinned messages.');
-                            console.log('Successfully subscribed to chatroom channel');
                         } else if (message.channel && message.channel.includes('chatrooms')) {
                             handleChatroomEvent(message);
                         } else if (message.event === 'pusher:error') {
@@ -1070,7 +987,7 @@ COMMON ISSUES:
                             updateStatus(`Pusher error: ${message.data?.message || 'Unknown error'}`);
                         }
                     } catch (parseError) {
-                        console.error('Error parsing WebSocket message:', parseError, 'Raw data:', event.data);
+                        console.error('Error parsing WebSocket message:', parseError);
                     }
                 };
 
@@ -1134,16 +1051,9 @@ COMMON ISSUES:
             // Add OBS class to body if detected
             if (isOBS) {
                 document.body.classList.add('obs');
-                console.log('OBS environment detected - applying OBS-specific fixes');
             }
             
             updateStatus('Fetching channel info...');
-            console.log('Initializing Kick Pinned Message Widget', {
-                url: window.location.href,
-                userAgent: navigator.userAgent,
-                isOBS: isOBS,
-                timestamp: new Date().toISOString()
-            });
             
             // Get channel from URL parameter
             const urlParams = new URLSearchParams(window.location.search);
@@ -1151,28 +1061,18 @@ COMMON ISSUES:
             
             if (!channelSlug) {
                 updateStatus('Error: No channel specified. Add ?channel=CHANNEL_NAME to URL');
-                console.error('No channel specified in URL parameters');
                 return;
             }
-            
-            console.log('Channel specified:', channelSlug);
 
             // Fetch channel info from Kick API
             fetch(`https://kick.com/api/v2/channels/${channelSlug}`)
                 .then(response => {
-                    console.log('API Response status:', response.status, response.statusText);
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Channel data:', data);
-                    console.log('🔍 Searching for subscriber badge data in channel info...');
-                    console.log('🔍 data.subscriber_badges:', data.subscriber_badges);
-                    console.log('🔍 data.badges:', data.badges);
-                    console.log('🔍 data.subscription:', data.subscription);
-                    console.log('🔍 data.user:', data.user);
                     
                     channelData = data;
                     const chatroomId = data.chatroom.id;
@@ -1194,10 +1094,6 @@ COMMON ISSUES:
                 .catch(error => {
                     console.error('Error fetching channel info:', error);
                     updateStatus(`Error: Could not fetch channel info - ${error.message}`);
-                    
-                    if (isOBS) {
-                        updateStatus('OBS detected: Try refreshing the browser source or check if the channel name is correct');
-                    }
                 });
         }
 
@@ -1334,60 +1230,7 @@ COMMON ISSUES:
             }
         }
 
-        // Test function for OBS debugging
-        function testEmojiRendering() {
-            console.log('=== EMOJI RENDERING TEST ===');
-            const testEmojis = ['💋', '😀', '🎉', '🔥', '❤️', '👍', '😂', '🤔'];
-            
-            testEmojis.forEach(emoji => {
-                console.log(`Testing emoji: ${emoji}`);
-                console.log(`Unicode: U+${emoji.codePointAt(0).toString(16).toUpperCase()}`);
-                
-                // Test if emoji renders properly
-                const testDiv = document.createElement('div');
-                testDiv.innerHTML = parseEmotes(`Test message with ${emoji} emoji`);
-                document.body.appendChild(testDiv);
-                
-                setTimeout(() => {
-                    const emojiSpan = testDiv.querySelector('.emoji');
-                    if (emojiSpan) {
-                        const computedStyle = window.getComputedStyle(emojiSpan);
-                        console.log(`Emoji ${emoji} - Font family: ${computedStyle.fontFamily}`);
-                        console.log(`Emoji ${emoji} - Font size: ${computedStyle.fontSize}`);
-                    }
-                    document.body.removeChild(testDiv);
-                }, 100);
-            });
-            
-            console.log('=== END EMOJI TEST ===');
-        }
 
-        // Add global debug function for OBS
-        window.kickWidgetDebug = function() {
-            console.log('=== KICK WIDGET DEBUG INFO ===');
-            console.log('Is OBS:', isOBS);
-            console.log('User Agent:', navigator.userAgent);
-            console.log('Current Pinned:', currentPinned);
-            console.log('WebSocket State:', ws ? ws.readyState : 'Not connected');
-            console.log('Reconnect Attempts:', reconnectAttempts);
-            console.log('Available Fonts:', document.fonts ? Array.from(document.fonts).map(f => f.family) : 'Font API not available');
-            
-            if (isOBS) {
-                updateStatus('Debug info logged to console - check OBS logs');
-            }
-            
-            // Test emoji rendering
-            testEmojiRendering();
-            
-            console.log('=== END DEBUG INFO ===');
-            return {
-                isOBS,
-                userAgent: navigator.userAgent,
-                currentPinned,
-                wsState: ws ? ws.readyState : null,
-                reconnectAttempts
-            };
-        };
 
         // Start the widget when page loads
         window.onload = init;
