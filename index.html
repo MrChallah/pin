@@ -5,7 +5,7 @@
         body { 
             background: transparent; 
             color: white; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
             margin: 0;
             padding: 0;
             width: 100vw;
@@ -139,6 +139,20 @@
         /* Ensure content elements have default opacity */
         #sender, #message-content, #user-badge-container {
             opacity: 1;
+        }
+        
+        /* Ensure proper emoji display */
+        #message-content {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+            font-variant-emoji: emoji;
+            text-rendering: optimizeQuality;
+        }
+        
+        /* Style for emojis to ensure they display properly */
+        #message-content .emoji {
+            font-size: 1.2em;
+            vertical-align: middle;
+            margin: 0 1px;
         }
 
         @keyframes snakeBorder {
@@ -643,11 +657,18 @@
         function parseEmotes(content) {
             console.log('Original content:', content);
             try {
-                // Replace [emote:ID:NAME] with actual emote images - use only the ID part
-                const parsed = content.replace(/\[emote:(\d+):[^\]]+\]/g, function(match, emoteId) {
+                // First, replace [emote:ID:NAME] with actual emote images - use only the ID part
+                let parsed = content.replace(/\[emote:(\d+):[^\]]+\]/g, function(match, emoteId) {
                     console.log('Found emote ID:', emoteId);
                     return '<img src="https://files.kick.com/emotes/' + emoteId + '/fullsize" alt="emote-' + emoteId + '" style="height: 18px; width: auto; vertical-align: middle; margin: 0 2px;" onerror="console.error(\'Failed to load emote: ' + emoteId + '\'); this.style.display=\'none\';">';
                 });
+                
+                // Ensure Unicode emojis are properly wrapped for styling
+                // This regex matches Unicode emoji characters
+                parsed = parsed.replace(/([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{1F018}-\u{1F270}]|[\u{238C}-\u{2454}]|[\u{20D0}-\u{20FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F200}-\u{1F2FF}])/gu, function(match) {
+                    return '<span class="emoji">' + match + '</span>';
+                });
+                
                 console.log('Parsed content:', parsed);
                 return parsed;
             } catch (error) {
