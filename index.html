@@ -16,7 +16,7 @@
         }
 
         #widget-container {
-            min-width: 300px;
+            min-width: 200px;
             max-width: 500px;
             width: max-content;
             min-height: 77px;
@@ -310,66 +310,115 @@
         }
 
         function createBadgeContent(badge) {
-            console.log('createBadgeContent called with badge:', badge);
+            console.log('🔍 createBadgeContent called with badge:', JSON.stringify(badge, null, 2));
             
-            // Handle subscriber badges with custom images - be more flexible with detection
-            const isSubscriberBadge = badge.image_url || 
-                (badge.type && (
-                    badge.type.toLowerCase().includes('subscriber') || 
-                    badge.type.toLowerCase().includes('sub') || 
-                    badge.type.toLowerCase().includes('month') ||
-                    badge.type.toLowerCase().includes('tier')
-                ));
+            // Debug all possible image URL properties
+            console.log('🔍 Badge image properties check:');
+            console.log('  - badge.image_url:', badge.image_url);
+            console.log('  - badge.imageUrl:', badge.imageUrl);
+            console.log('  - badge.image:', badge.image);
+            console.log('  - badge.url:', badge.url);
+            console.log('  - badge.src:', badge.src);
+            
+            // PRIORITY 1: Handle custom subscriber images first (check multiple possible property names)
+            const imageUrl = badge.image_url || badge.imageUrl || badge.image || badge.url || badge.src;
+            if (imageUrl && imageUrl.trim()) {
+                console.log('🖼️ Found custom badge image:', imageUrl);
+                return `<img alt="${badge.type || 'Subscriber'}" class="size-[calc(1em*(18/13))]" src="${imageUrl}" onerror="console.error('Failed to load badge image: ${imageUrl}'); this.style.display='none';">`;
+            }
+            
+            // PRIORITY 1.5: Handle subscriber badges with count - fetch custom image from API data
+            if (badge.type === 'subscriber' && badge.count) {
+                console.log(`🎖️ Looking for subscriber badge with count: ${badge.count}`);
+                console.log(`🎖️ Available subscriber badges:`, subscriberBadges);
+                console.log(`🎖️ Keys in subscriberBadges:`, Object.keys(subscriberBadges));
                 
-            if (isSubscriberBadge) {
-                console.log('Detected subscriber badge:', badge);
-                if (badge.image_url) {
-                    // Custom subscriber badge image - use exact Kick format
-                    console.log('Using custom subscriber image:', badge.image_url);
-                    return `<img alt="${badge.type || 'Subscriber'}" class="size-[calc(1em*(18/13))]" src="${badge.image_url}" onerror="console.error('Failed to load badge image: ${badge.image_url}'); this.style.display='none';">`;
+                // Try multiple ways to match the badge count
+                let foundBadgeUrl = null;
+                const possibleKeys = [
+                    badge.count,           // Direct match
+                    badge.count.toString(), // String version
+                    `${badge.count}`,      // Template version
+                    `month_${badge.count}`, // Prefixed version
+                    `tier_${badge.count}`,  // Tier version
+                ];
+                
+                for (const key of possibleKeys) {
+                    if (subscriberBadges[key]) {
+                        foundBadgeUrl = subscriberBadges[key];
+                        console.log(`🎖️ Found subscriber badge match with key: ${key} -> ${foundBadgeUrl}`);
+                        break;
+                    }
+                }
+                
+                // If we still haven't found it, try the first available badge as fallback
+                if (!foundBadgeUrl && Object.keys(subscriberBadges).length > 0) {
+                    const firstKey = Object.keys(subscriberBadges)[0];
+                    foundBadgeUrl = subscriberBadges[firstKey];
+                    console.log(`🎖️ Using first available subscriber badge as fallback: ${firstKey} -> ${foundBadgeUrl}`);
+                }
+                
+                // If we found a badge URL, use it
+                if (foundBadgeUrl) {
+                    console.log(`🎖️ Found custom subscriber badge for ${badge.count} months:`, foundBadgeUrl);
+                    return `<img alt="${badge.count}-Month Subscriber" class="size-[calc(1em*(18/13))]" src="${foundBadgeUrl}" onerror="console.error('Failed to load subscriber badge image: ${foundBadgeUrl}'); this.style.display='none';">`;
+                } else {
+                    console.log(`❌ No custom subscriber badge found for ${badge.count} months`);
+                }
+            } else if (badge.type === 'subscriber') {
+                console.log('❌ Subscriber badge missing count property');
+            } else {
+                console.log('❌ No image URL found for badge:', badge.type);
+            }
+            
+            // PRIORITY 2: Handle gifted subscriber badge specifically
+            if (badge.type) {
+                const badgeTypeLower = badge.type.toLowerCase();
+                console.log('🎁 Checking for gifted badge, type:', badgeTypeLower);
+                
+                if (badgeTypeLower.includes('gifted') || badgeTypeLower === 'gifted_sub' || badgeTypeLower.includes('gift')) {
+                    console.log('🎁 Detected gifted subscriber badge!');
+                    return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
+                        <g clip-path="url(#clip0_31_3197)">
+                            <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#2EFAD1"></path>
+                            <path d="M26.08 19.1001H5.90002V28.5001H26.08V19.1001Z" fill="#2EFAD1"></path>
+                            <path d="M26.08 15.1001H5.90002V19.1001H26.08V15.1001Z" fill="#00A18D"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_31_3197">
+                                <rect width="24" height="24.5" fill="white" transform="translate(4 4)"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>`;
+                }
+                
+                // PRIORITY 3: Handle regular subscriber badges (only if no image and not gifted)
+                if (badgeTypeLower.includes('subscriber') || badgeTypeLower.includes('month') || badgeTypeLower.includes('tier')) {
+                    console.log('⭐ Detected regular subscriber badge (fallback)');
+                    return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
+                        <g clip-path="url(#clip0_746_28171)">
+                            <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint0_linear_746_28171)"></path>
+                            <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint1_linear_746_28171)"></path>
+                        </g>
+                        <defs>
+                            <linearGradient id="paint0_linear_746_28171" x1="18.8102" y1="-12.7222" x2="2.88536" y2="39.1063" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#53fc18"></stop>
+                                <stop offset="1" stop-color="#00C758"></stop>
+                            </linearGradient>
+                            <linearGradient id="paint1_linear_746_28171" x1="15.7467" y1="-4.75575" x2="16.321" y2="39.0672" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#53fc18"></stop>
+                                <stop offset="0.99" stop-color="#00C758"></stop>
+                            </linearGradient>
+                            <clipPath id="clip0_746_28171">
+                                <rect width="32" height="32" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>`;
                 }
             }
             
-            // Handle gifted subscriber badge with standard SVG
-            if (badge.type && (badge.type.toLowerCase().includes('gifted') || badge.type.toLowerCase() === 'gifted_sub')) {
-                return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
-                    <g clip-path="url(#clip0_31_3197)">
-                        <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#2EFAD1"></path>
-                        <path d="M26.08 19.1001H5.90002V28.5001H26.08V19.1001Z" fill="#2EFAD1"></path>
-                        <path d="M26.08 15.1001H5.90002V19.1001H26.08V15.1001Z" fill="#00A18D"></path>
-                    </g>
-                    <defs>
-                        <clipPath id="clip0_31_3197">
-                            <rect width="24" height="24.5" fill="white" transform="translate(4 4)"></rect>
-                        </clipPath>
-                    </defs>
-                </svg>`;
-            }
-            
-            // Handle regular subscriber badge with standard SVG (if no custom image)
-            if (badge.type && (badge.type.toLowerCase().includes('subscriber') || badge.type.toLowerCase().includes('sub') || badge.type.toLowerCase().includes('month') || badge.type.toLowerCase().includes('tier')) && !badge.image_url) {
-                return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
-                    <g clip-path="url(#clip0_746_28171)">
-                        <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint0_linear_746_28171)"></path>
-                        <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint1_linear_746_28171)"></path>
-                    </g>
-                    <defs>
-                        <linearGradient id="paint0_linear_746_28171" x1="18.8102" y1="-12.7222" x2="2.88536" y2="39.1063" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#53fc18"></stop>
-                            <stop offset="1" stop-color="#00C758"></stop>
-                        </linearGradient>
-                        <linearGradient id="paint1_linear_746_28171" x1="15.7467" y1="-4.75575" x2="16.321" y2="39.0672" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#53fc18"></stop>
-                            <stop offset="0.99" stop-color="#00C758"></stop>
-                        </linearGradient>
-                        <clipPath id="clip0_746_28171">
-                            <rect width="32" height="32" fill="white"></rect>
-                        </clipPath>
-                    </defs>
-                </svg>`;
-            }
-            
-            // Fall back to the old SVG-only function for other badge types
+            // PRIORITY 4: Fall back to other badge types
+            console.log('🔄 Falling back to createBadgeSVG for type:', badge.type);
             return createBadgeSVG(badge.type);
         }
 
@@ -635,16 +684,25 @@
             document.getElementById('sender').style.color = senderColor;
             document.getElementById('message-content').innerHTML = parseEmotes(messageContent);
             
+            console.log('🔍 FULL PINNED MESSAGE DATA INSPECTION:');
+            console.log('🔍 currentPinned object:', JSON.stringify(currentPinned, null, 2));
+            console.log('🔍 Sender object:', JSON.stringify(currentPinned.sender, null, 2));
+            console.log('🔍 Identity object:', JSON.stringify(currentPinned.sender?.identity, null, 2));
+            console.log('🔍 Looking for subscriber data in all possible locations...');
+            
             // Update badges - create Kick's exact structure
             const badgeContainer = document.getElementById('user-badge-container');
             badgeContainer.innerHTML = '';
             
-            badges.forEach(badge => {
-                console.log('Processing badge:', badge);
+            console.log('🎯 STARTING BADGE PROCESSING - Total badges found:', badges.length);
+            console.log('🎯 All badges data:', JSON.stringify(badges, null, 2));
+            
+            badges.forEach((badge, index) => {
+                console.log(`\n🎯 Processing badge ${index + 1}/${badges.length}:`, badge);
                 // Show badges that are NOT explicitly set to false and have a valid type or image_url
                 // Be more lenient - check if active is undefined or true, not just !== false
                 const isActive = badge.active === undefined || badge.active === true || badge.active !== false;
-                const hasTypeOrImage = badge.type || badge.image_url;
+                const hasTypeOrImage = badge.type || badge.image_url || badge.imageUrl || badge.image || badge.url || badge.src;
                 
                 console.log('Badge check - isActive:', isActive, 'hasTypeOrImage:', hasTypeOrImage);
                 
@@ -655,14 +713,18 @@
                         badgeWrapper.className = 'inline-flex shrink-0 items-center size-[calc(1em*(18/13))]';
                         
                         // Use appropriate data-state for subscriber badges
-                        const isSubscriberBadge = badge.image_url || 
+                        const hasImageUrl = badge.image_url || badge.imageUrl || badge.image || badge.url || badge.src;
+                        const isSubscriberBadge = hasImageUrl || 
                             (badge.type && (
                                 badge.type.toLowerCase().includes('subscriber') || 
-                                badge.type.toLowerCase().includes('sub') || 
+                                badge.type.toLowerCase().includes('sub') ||
                                 badge.type.toLowerCase().includes('month') ||
-                                badge.type.toLowerCase().includes('tier')
+                                badge.type.toLowerCase().includes('tier') ||
+                                badge.type.toLowerCase().includes('gifted') ||
+                                badge.type.toLowerCase().includes('gift')
                             ));
                         const dataState = isSubscriberBadge ? 'delayed-open' : 'closed';
+                        console.log('🏷️ Badge data-state:', dataState, 'for badge:', badge.type || 'image badge');
                         
                         badgeWrapper.innerHTML = `<div data-state="${dataState}">${badgeContent}</div>`;
                         badgeContainer.appendChild(badgeWrapper);
@@ -867,6 +929,10 @@
             }
         }
 
+        // Store channel data globally for subscriber badge lookups
+        let channelData = null;
+        let subscriberBadges = {};
+
         // Initialize the widget
         function init() {
             updateStatus('Fetching channel info...');
@@ -885,7 +951,24 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Channel data:', data);
+                    console.log('🔍 Searching for subscriber badge data in channel info...');
+                    console.log('🔍 data.subscriber_badges:', data.subscriber_badges);
+                    console.log('🔍 data.badges:', data.badges);
+                    console.log('🔍 data.subscription:', data.subscription);
+                    console.log('🔍 data.user:', data.user);
+                    
+                    channelData = data;
                     const chatroomId = data.chatroom.id;
+                    
+                    // Try to find subscriber badge info in channel data first
+                    if (data.subscriber_badges || data.badges || data.subscription) {
+                        console.log('🎖️ Found badge-related data in channel info!');
+                        parseChannelBadgeData(data);
+                    }
+                    
+                    // Also try alternative API approaches
+                    fetchSubscriberBadges(data.id, channelSlug);
+                    
                     updateStatus(`Found chatroom ID: ${chatroomId}. Connecting to websocket...`);
                     
                     // Connect to WebSocket
@@ -895,6 +978,139 @@
                     console.error('Error fetching channel info:', error);
                     updateStatus('Error: Could not fetch channel info');
                 });
+        }
+
+        // Parse badge data from channel info
+        function parseChannelBadgeData(data) {
+            console.log('🎖️ Parsing badge data from channel info...');
+            
+            // Check various possible locations for subscriber badge data
+            const badgeSources = [
+                data.subscriber_badges,
+                data.badges,
+                data.subscription?.badges,
+                data.user?.subscriber_badges,
+                data.chatroom?.subscriber_badges
+            ];
+            
+            badgeSources.forEach((source, index) => {
+                if (source) {
+                    console.log(`🎖️ Found badge source ${index}:`, source);
+                    console.log(`🎖️ Badge source ${index} structure:`, JSON.stringify(source, null, 2));
+                    
+                    if (Array.isArray(source)) {
+                        source.forEach((badge, badgeIndex) => {
+                            console.log(`🎖️ Processing badge ${badgeIndex}:`, JSON.stringify(badge, null, 2));
+                            
+                            // Try multiple property combinations for month/tier identification
+                            const monthKey = badge.months || badge.tier || badge.level || badge.count || (badgeIndex + 1);
+                            
+                            // Try multiple property combinations for image URL
+                            const imageUrl = badge.image_url || badge.imageUrl || badge.src || badge.url || 
+                                           badge.image?.src || badge.image?.url || badge.badge_image?.src;
+                            
+                            if (monthKey && imageUrl) {
+                                subscriberBadges[monthKey] = imageUrl;
+                                console.log(`🎖️ Stored subscriber badge for ${monthKey} months:`, imageUrl);
+                            } else {
+                                console.log(`🎖️ Skipping badge ${badgeIndex} - monthKey: ${monthKey}, imageUrl: ${imageUrl}`);
+                            }
+                        });
+                    } else if (typeof source === 'object') {
+                        Object.keys(source).forEach(key => {
+                            const badge = source[key];
+                            console.log(`🎖️ Processing badge key ${key}:`, JSON.stringify(badge, null, 2));
+                            
+                            if (badge && typeof badge === 'object') {
+                                const imageUrl = badge.image_url || badge.imageUrl || badge.src || badge.url || 
+                                               badge.image?.src || badge.image?.url || badge.badge_image?.src;
+                                
+                                if (imageUrl) {
+                                    subscriberBadges[key] = imageUrl;
+                                    console.log(`🎖️ Stored subscriber badge for ${key}:`, imageUrl);
+                                } else if (typeof badge === 'string') {
+                                    subscriberBadges[key] = badge;
+                                    console.log(`🎖️ Stored subscriber badge for ${key}:`, badge);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // Fetch channel subscriber badges using multiple approaches
+        function fetchSubscriberBadges(channelId, channelSlug) {
+            console.log('🎖️ Fetching subscriber badges for channel:', channelId);
+            
+            // Try approach 1: Direct API calls
+            const apiEndpoints = [
+                `https://kick.com/api/v1/channels/${channelId}/subscriber-badges`,
+                `https://kick.com/api/v2/channels/${channelId}/subscriber-badges`,
+                `https://kick.com/api/v1/channels/${channelSlug}/subscriber-badges`,
+                `https://kick.com/api/v2/channels/${channelSlug}/subscriber-badges`,
+                `https://kick.com/api/v1/channel-subscriber-badges/${channelId}`,
+                `https://kick.com/api/v2/channel-subscriber-badges/${channelId}`
+            ];
+            
+            // Try each endpoint
+            apiEndpoints.forEach((endpoint, index) => {
+                fetch(endpoint)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    })
+                    .then(badges => {
+                        console.log(`🎖️ Success with endpoint ${index} (${endpoint}):`, badges);
+                        processBadgeData(badges);
+                    })
+                    .catch(error => {
+                        console.log(`❌ Endpoint ${index} failed (${endpoint}):`, error.message);
+                    });
+            });
+            
+            // Try approach 2: Pattern-based URL construction
+            // Based on the URL pattern: https://files.kick.com/channel_subscriber_badges/456502/original
+            if (channelId) {
+                const testUrl = `https://files.kick.com/channel_subscriber_badges/${channelId}/original`;
+                console.log('🎖️ Testing direct image URL pattern:', testUrl);
+                
+                // Test if the image exists
+                const img = new Image();
+                img.onload = () => {
+                    console.log('🎖️ Found subscriber badge with direct URL pattern!');
+                    subscriberBadges[1] = testUrl; // Assume 1-month for testing
+                    console.log('🎖️ Stored 1-month subscriber badge:', testUrl);
+                };
+                img.onerror = () => {
+                    console.log('❌ Direct URL pattern failed for channel ID:', channelId);
+                };
+                img.src = testUrl;
+            }
+        }
+        
+        // Process badge data from API responses
+        function processBadgeData(badges) {
+            if (Array.isArray(badges)) {
+                badges.forEach(badge => {
+                    if (badge.months && (badge.badge_image?.src || badge.image_url)) {
+                        const imageUrl = badge.badge_image?.src || badge.image_url;
+                        subscriberBadges[badge.months] = imageUrl;
+                        console.log(`🎖️ Stored subscriber badge for ${badge.months} months:`, imageUrl);
+                    }
+                });
+            } else if (badges && typeof badges === 'object') {
+                Object.keys(badges).forEach(key => {
+                    const badge = badges[key];
+                    if (badge && (badge.image_url || badge.src)) {
+                        const imageUrl = badge.image_url || badge.src;
+                        subscriberBadges[key] = imageUrl;
+                        console.log(`🎖️ Stored subscriber badge for ${key}:`, imageUrl);
+                    }
+                });
+            }
         }
 
         // Start the widget when page loads
