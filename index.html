@@ -309,6 +309,70 @@
             console.log('Status:', message);
         }
 
+        function createBadgeContent(badge) {
+            console.log('createBadgeContent called with badge:', badge);
+            
+            // Handle subscriber badges with custom images - be more flexible with detection
+            const isSubscriberBadge = badge.image_url || 
+                (badge.type && (
+                    badge.type.toLowerCase().includes('subscriber') || 
+                    badge.type.toLowerCase().includes('sub') || 
+                    badge.type.toLowerCase().includes('month') ||
+                    badge.type.toLowerCase().includes('tier')
+                ));
+                
+            if (isSubscriberBadge) {
+                console.log('Detected subscriber badge:', badge);
+                if (badge.image_url) {
+                    // Custom subscriber badge image - use exact Kick format
+                    console.log('Using custom subscriber image:', badge.image_url);
+                    return `<img alt="${badge.type || 'Subscriber'}" class="size-[calc(1em*(18/13))]" src="${badge.image_url}" onerror="console.error('Failed to load badge image: ${badge.image_url}'); this.style.display='none';">`;
+                }
+            }
+            
+            // Handle gifted subscriber badge with standard SVG
+            if (badge.type && (badge.type.toLowerCase().includes('gifted') || badge.type.toLowerCase() === 'gifted_sub')) {
+                return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
+                    <g clip-path="url(#clip0_31_3197)">
+                        <path d="M22.34 9.5L26 4H18L16 7L14 4H6L9.66 9.5H4V15.1H28V9.5H22.34Z" fill="#2EFAD1"></path>
+                        <path d="M26.08 19.1001H5.90002V28.5001H26.08V19.1001Z" fill="#2EFAD1"></path>
+                        <path d="M26.08 15.1001H5.90002V19.1001H26.08V15.1001Z" fill="#00A18D"></path>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_31_3197">
+                            <rect width="24" height="24.5" fill="white" transform="translate(4 4)"></rect>
+                        </clipPath>
+                    </defs>
+                </svg>`;
+            }
+            
+            // Handle regular subscriber badge with standard SVG (if no custom image)
+            if (badge.type && (badge.type.toLowerCase().includes('subscriber') || badge.type.toLowerCase().includes('sub') || badge.type.toLowerCase().includes('month') || badge.type.toLowerCase().includes('tier')) && !badge.image_url) {
+                return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
+                    <g clip-path="url(#clip0_746_28171)">
+                        <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint0_linear_746_28171)"></path>
+                        <path d="M30 0C31.1046 0 32 0.895431 32 2V30C32 31.1046 31.1046 32 30 32H2C0.895431 32 0 31.1046 0 30V2C0 0.895431 0.895431 4.10637e-08 2 0H30ZM15.9648 5C15.7748 5.00005 15.588 5.05204 15.4238 5.15039C15.2596 5.24878 15.124 5.39057 15.0303 5.56055L9.82812 15.0176L3.55078 11.8906C3.36913 11.7985 3.16534 11.7607 2.96387 11.7822C2.76241 11.8038 2.57048 11.8842 2.41113 12.0127C2.25235 12.1408 2.13185 12.3126 2.06348 12.5078C1.99511 12.7031 1.98143 12.9144 2.02441 13.1172L4.58301 25.127C4.63544 25.3782 4.77165 25.6034 4.96777 25.7627C5.16376 25.9217 5.40762 26.0056 5.65723 26H26.251C26.5009 26.0057 26.7453 25.9219 26.9414 25.7627C27.1376 25.6034 27.2737 25.3782 27.3262 25.127L29.9697 13.1172C30.0187 12.9103 30.0086 12.6932 29.9404 12.4922C29.8722 12.2912 29.7485 12.1151 29.585 11.9844C29.4215 11.8537 29.2249 11.7743 29.0186 11.7559C28.8122 11.7374 28.6049 11.7802 28.4219 11.8799L22.1025 15.0283L16.9004 5.56055C16.8066 5.39054 16.6701 5.24878 16.5059 5.15039C16.3416 5.05207 16.1549 5 15.9648 5Z" fill="url(#paint1_linear_746_28171)"></path>
+                    </g>
+                    <defs>
+                        <linearGradient id="paint0_linear_746_28171" x1="18.8102" y1="-12.7222" x2="2.88536" y2="39.1063" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#53fc18"></stop>
+                            <stop offset="1" stop-color="#00C758"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint1_linear_746_28171" x1="15.7467" y1="-4.75575" x2="16.321" y2="39.0672" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#53fc18"></stop>
+                            <stop offset="0.99" stop-color="#00C758"></stop>
+                        </linearGradient>
+                        <clipPath id="clip0_746_28171">
+                            <rect width="32" height="32" fill="white"></rect>
+                        </clipPath>
+                    </defs>
+                </svg>`;
+            }
+            
+            // Fall back to the old SVG-only function for other badge types
+            return createBadgeSVG(badge.type);
+        }
+
         function createBadgeSVG(badgeType) {
             // Handle various badge type names that Kick might use
             const normalizedType = badgeType.toLowerCase();
@@ -447,7 +511,8 @@
                         </clipPath>
                     </defs>
                 </svg>`;
-            } else if (normalizedType === 'og' || normalizedType === 'founding_member' || normalizedType === 'founder') {
+            } else if (normalizedType === 'og') {
+                // OG badge - use the "OG" text SVG
                 return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
                     <g clip-path="url(#clip0_614_6266)">
                         <path d="M22.8226 17.2693V28.0037C22.8226 28.2177 22.8929 28.383 23.0336 28.4996C23.1742 28.5969 23.3969 28.6455 23.7017 28.6455H24.5104V32H21.838C19.9627 32 18.6265 31.6694 17.8294 31.0082C17.0559 30.347 16.6691 29.472 16.6691 28.383V16.8901C16.6691 15.8011 17.0559 14.926 17.8294 14.2648C18.6265 13.6036 19.9627 13.273 21.838 13.273H24.6511V16.6276H23.7017C23.3969 16.6276 23.1742 16.6859 23.0336 16.8026C22.8929 16.8998 22.8226 17.0554 22.8226 17.2693ZM32.0002 21.6447V24.8826H24.0885V21.6447H32.0002ZM25.8466 19.6904V17.2693C25.8466 17.0554 25.7763 16.8998 25.6357 16.8026C25.495 16.6859 25.2723 16.6276 24.9676 16.6276H24.0182V13.273H26.8312C28.7066 13.273 30.031 13.6036 30.8046 14.2648C31.6017 14.926 32.0002 15.8011 32.0002 16.8901V19.6904H25.8466ZM25.8466 28.0037V23.8908H32.0002V28.383C32.0002 29.472 31.6017 30.347 30.8046 31.0082C30.031 31.6694 28.7066 32 26.8312 32H24.1588V28.6455H24.9676C25.2723 28.6455 25.495 28.5969 25.6357 28.4996C25.7763 28.383 25.8466 28.2177 25.8466 28.0037Z" fill="white"></path>
@@ -467,6 +532,43 @@
                             <stop offset="1" stop-color="#006399"></stop>
                         </linearGradient>
                         <clipPath id="clip0_614_6266">
+                            <rect width="32" height="32" fill="white"></rect>
+                        </clipPath>
+                    </defs>
+                </svg>`;
+            } else if (normalizedType === 'founding_member' || normalizedType === 'founder') {
+                // Founder badge - use the golden circle with "1" SVG
+                return `<svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" class="size-[calc(1em*(18/13))]">
+                    <g clip-path="url(#clip0_209_29912)">
+                        <path d="M16 32C24.8366 32 32 24.8366 32 16C32 7.16344 24.8366 0 16 0C7.16344 0 0 7.16344 0 16C0 24.8366 7.16344 32 16 32Z" fill="url(#paint0_linear_209_29912)"></path>
+                        <path d="M16 32C24.8366 32 32 24.8366 32 16C32 7.16344 24.8366 0 16 0C7.16344 0 0 7.16344 0 16C0 24.8366 7.16344 32 16 32Z" fill="url(#paint1_linear_209_29912)"></path>
+                        <path d="M16 29.0375C23.2004 29.0375 29.0375 23.2004 29.0375 16C29.0375 8.79958 23.2004 2.96249 16 2.96249C8.79959 2.96249 2.9625 8.79958 2.9625 16C2.9625 23.2004 8.79959 29.0375 16 29.0375Z" fill="#FEB635"></path>
+                        <path d="M16 29.0375C23.2004 29.0375 29.0375 23.2004 29.0375 16C29.0375 8.79958 23.2004 2.96249 16 2.96249C8.79959 2.96249 2.9625 8.79958 2.9625 16C2.9625 23.2004 8.79959 29.0375 16 29.0375Z" fill="url(#paint2_linear_209_29912)"></path>
+                        <path d="M29.0375 16C29.0375 23.1875 23.1875 29.0375 16 29.0375C13.6563 29.0375 11.4625 28.4187 9.5625 27.3312C11.3125 28.2062 13.2875 28.7 15.375 28.7C22.5625 28.7 28.4125 22.85 28.4125 15.6625C28.4125 10.8188 25.75 6.58125 21.8125 4.3375C26.0938 6.475 29.0375 10.8938 29.0375 16ZM16.8875 3.575C19.4563 3.575 21.85 4.325 23.8625 5.60625C21.675 3.95625 18.95 2.96875 16 2.96875C8.8125 2.96875 2.9625 8.8125 2.9625 16.0063C2.9625 20.6437 5.4 24.7313 9.0625 27.0312C5.9 24.65 3.85 20.8687 3.85 16.6125C3.85 9.425 9.7 3.575 16.8875 3.575Z" fill="black" fill-opacity="0.05"></path>
+                        <path d="M18.5966 9.45456V24H14.6477V13.0909H14.5625L11.3807 14.9943V11.6421L14.9602 9.45456H18.5966Z" fill="black" fill-opacity="0.8"></path>
+                        <path d="M18.5966 9.45456V24H14.6477V13.0909H14.5625L11.3807 14.9943V11.6421L14.9602 9.45456H18.5966Z" fill="url(#paint3_linear_209_29912)" fill-opacity="0.5"></path>
+                        <path d="M18.5966 9.45456V24H14.6477V13.0909H14.5625L11.3807 14.9943V11.6421L14.9602 9.45456H18.5966Z" stroke="black" stroke-opacity="0.1" stroke-width="0.350269"></path>
+                    </g>
+                    <defs>
+                        <linearGradient id="paint0_linear_209_29912" x1="15.7467" y1="-4.46667" x2="16.2533" y2="36.6933" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFC900"></stop>
+                            <stop offset="0.99" stop-color="#FF9500"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint1_linear_209_29912" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="white" stop-opacity="0.3"></stop>
+                            <stop offset="1" stop-color="white" stop-opacity="0.15"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint2_linear_209_29912" x1="15.7936" y1="-0.677142" x2="16.2064" y2="32.8618" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#FFC900"></stop>
+                            <stop offset="0.99" stop-color="#FF9500"></stop>
+                        </linearGradient>
+                        <linearGradient id="paint3_linear_209_29912" x1="18.5966" y1="16.7273" x2="11.3807" y2="16.7273" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="white" stop-opacity="0.1"></stop>
+                            <stop offset="0.3" stop-color="white" stop-opacity="0.2"></stop>
+                            <stop offset="0.65" stop-color="white" stop-opacity="0.05"></stop>
+                            <stop offset="1" stop-color="white" stop-opacity="0.2"></stop>
+                        </linearGradient>
+                        <clipPath id="clip0_209_29912">
                             <rect width="32" height="32" fill="white"></rect>
                         </clipPath>
                     </defs>
@@ -539,20 +641,37 @@
             
             badges.forEach(badge => {
                 console.log('Processing badge:', badge);
-                // Show badges that are NOT explicitly set to false and have a valid type
-                if (badge.active !== false && badge.type) {
-                    const badgeSvg = createBadgeSVG(badge.type);
-                    if (badgeSvg) {
+                // Show badges that are NOT explicitly set to false and have a valid type or image_url
+                // Be more lenient - check if active is undefined or true, not just !== false
+                const isActive = badge.active === undefined || badge.active === true || badge.active !== false;
+                const hasTypeOrImage = badge.type || badge.image_url;
+                
+                console.log('Badge check - isActive:', isActive, 'hasTypeOrImage:', hasTypeOrImage);
+                
+                if (isActive && hasTypeOrImage) {
+                    const badgeContent = createBadgeContent(badge);
+                    if (badgeContent) {
                         const badgeWrapper = document.createElement('div');
                         badgeWrapper.className = 'inline-flex shrink-0 items-center size-[calc(1em*(18/13))]';
-                        badgeWrapper.innerHTML = `<div data-state="closed">${badgeSvg}</div>`;
+                        
+                        // Use appropriate data-state for subscriber badges
+                        const isSubscriberBadge = badge.image_url || 
+                            (badge.type && (
+                                badge.type.toLowerCase().includes('subscriber') || 
+                                badge.type.toLowerCase().includes('sub') || 
+                                badge.type.toLowerCase().includes('month') ||
+                                badge.type.toLowerCase().includes('tier')
+                            ));
+                        const dataState = isSubscriberBadge ? 'delayed-open' : 'closed';
+                        
+                        badgeWrapper.innerHTML = `<div data-state="${dataState}">${badgeContent}</div>`;
                         badgeContainer.appendChild(badgeWrapper);
-                        console.log('Added badge:', badge.type, 'active status:', badge.active);
+                        console.log('✅ Successfully added badge:', badge.type || 'image badge', 'active status:', badge.active, 'dataState:', dataState);
                     } else {
-                        console.warn('Unknown badge type:', badge.type, 'Full badge:', badge);
+                        console.warn('❌ Failed to create badge content for:', badge.type, 'Full badge:', badge);
                     }
                 } else {
-                    console.log('Skipping badge - active:', badge.active, 'type:', badge.type, 'full badge:', badge);
+                    console.log('⏭️ Skipping badge - isActive:', isActive, 'hasTypeOrImage:', hasTypeOrImage, 'badge:', badge);
                 }
             });
         }
