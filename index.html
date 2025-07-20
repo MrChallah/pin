@@ -85,8 +85,37 @@ COMMON ISSUES:
             word-break: break-word;
             white-space: pre-wrap;
             max-width: 100%;
-            overflow-wrap: break-word;
+            overflow-wrap: anywhere;
+            hyphens: none;
             transition: width 0.4s ease-in-out, height 0.4s ease-in-out, padding 0.4s ease-in-out;
+        }
+
+        /* Improve link wrapping - prevent links from breaking mid-URL */
+        #message-content a {
+            word-break: keep-all;
+            white-space: nowrap;
+            display: inline;
+        }
+
+        /* Allow text after links to wrap normally */
+        #message-content a + * {
+            word-break: break-word;
+        }
+
+        /* Special handling for URLs and links to prevent awkward breaks */
+        #message-content a,
+        #message-content [href],
+        #message-content .url,
+        .link-no-break {
+            word-break: keep-all !important;
+            white-space: nowrap !important;
+            overflow-wrap: normal !important;
+            display: inline !important;
+        }
+
+        /* Allow the container to wrap more naturally */
+        .flex-nowrap {
+            flex-wrap: wrap !important;
         }
 
         /* Ensure content doesn't expand unnecessarily with smooth transitions */
@@ -362,7 +391,7 @@ COMMON ISSUES:
                                     </button>
                                 </div>
                             </div>
-                            <div class="flex flex-row flex-nowrap justify-between gap-1" style="opacity: 1; align-self: end;">
+                            <div class="flex flex-row flex-wrap justify-between gap-1" style="opacity: 1; align-self: end;">
                                 <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold" id="message-content">No message</div>
                                 <button class="group relative box-border flex shrink-0 grow-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-semibold ring-0 transition-all focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none [&_svg]:size-[1em] bg-transparent focus-visible:outline-grey-300 text-white [&_svg]:fill-current betterhover:hover:bg-surface-tint lg:data-[state=open]:bg-surface-tint data-[state=active]:bg-surface-tint disabled:text-grey-600 disabled:bg-grey-1000 size-8 text-sm leading-none" data-state="closed" data-testid="pinned-expand-button">
                                     <svg width="32" height="32" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg" class="transition-transform rotate-90">
@@ -690,17 +719,28 @@ COMMON ISSUES:
 
         function parseEmotes(content) {
             try {
-                // First, replace [emote:ID:NAME] with actual emote images
-                let parsed = content.replace(/\[emote:(\d+):[^\]]+\]/g, function(match, emoteId) {
+                // First, convert URLs to clickable links before processing emotes
+                // This regex captures http/https URLs
+                const urlRegex = /(https?:\/\/[^\s]+)/gi;
+                let parsed = content.replace(urlRegex, function(match) {
+                    // Remove trailing punctuation that might not be part of the URL
+                    let cleanUrl = match.replace(/[.,:;!?]$/, '');
+                    let trailingPunc = match.length > cleanUrl.length ? match.slice(-1) : '';
+                    
+                    return `<a href="${cleanUrl}" target="_blank" class="link-no-break" style="word-break: keep-all; white-space: nowrap; color: #53fc18;">${cleanUrl}</a>${trailingPunc}`;
+                });
+
+                // Second, replace [emote:ID:NAME] with actual emote images
+                parsed = parsed.replace(/\[emote:(\d+):[^\]]+\]/g, function(match, emoteId) {
                     return '<img src="https://files.kick.com/emotes/' + emoteId + '/fullsize" alt="emote-' + emoteId + '" style="height: 18px; width: auto; vertical-align: middle; margin: 0 2px;" onerror="this.style.display=\'none\';">';
                 });
-                
+
                 // Handle Unicode emojis - use Twemoji images for OBS compatibility
                 if (isOBS) {
                     // For OBS, convert emojis to Twemoji images for better compatibility
                     // Comprehensive emoji regex including all major Unicode blocks
                     const emojiRegex = /([\u{1F000}-\u{1F02F}]|[\u{1F0A0}-\u{1F0FF}]|[\u{1F100}-\u{1F64F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{2B00}-\u{2BFF}]|[\u{3000}-\u{303F}]|[\u{1F1E6}-\u{1F1FF}])/gu;
-                    
+
                     parsed = parsed.replace(emojiRegex, function(match) {
                         // Convert emoji to hex codepoint for Twemoji URL
                         const codepoint = match.codePointAt(0).toString(16);
@@ -711,7 +751,7 @@ COMMON ISSUES:
                     const emojiRegex = /([\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}])/gu;
                     parsed = parsed.replace(emojiRegex, '<span class="emoji">$1</span>');
                 }
-                
+
                 return parsed;
             } catch (error) {
                 console.error('Error parsing emotes:', error);
