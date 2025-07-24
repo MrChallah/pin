@@ -54,9 +54,9 @@ COMMON ISSUES:
         }
 
         #widget-container {
-            min-width: 335px;
-            max-width: 335px;
-            width: 335px;
+            min-width: 0px;
+            width: max-content;
+            max-width: calc(60ch + 32px); /* 80 chars + padding */
             min-height: 77px;
             position: fixed;
             top: 20px;
@@ -73,46 +73,28 @@ COMMON ISSUES:
             display: none !important;
         }
 
-        /* Make widget width consistent by overriding w-full classes */
+        /* Make widget width dynamic by overriding w-full classes */
         #pinned-container,
         #pinned-container .w-full {
-            width: 335px !important;
+            width: auto !important;
         }
 
         /* Ensure proper text wrapping for long messages with smooth transitions */
         #message-content {
             word-wrap: break-word;
-            word-break: break-word;
+            word-break: normal;
             white-space: pre-wrap;
-            max-width: 100%;
-            overflow-wrap: anywhere;
+            max-width: 60ch; /* Roughly 80 characters */
+            overflow-wrap: break-word;
             hyphens: none;
             transition: width 0.4s ease-in-out, height 0.4s ease-in-out, padding 0.4s ease-in-out;
         }
 
-        /* Smart link wrapping - allow breaking for links over 50 characters */
+        /* Improve link wrapping - prevent links from breaking mid-URL */
         #message-content a {
-            display: inline;
-            color: #53fc18;
-            text-decoration: underline;
-            /* Use CSS to detect long links and allow breaking */
-            word-break: break-all;
-            overflow-wrap: break-word;
-            white-space: normal;
-        }
-
-        /* For shorter links, try to keep them intact when possible */
-        #message-content a[href*="://"]:not([href*="very-long-url-marker"]) {
             word-break: keep-all;
             white-space: nowrap;
-            overflow-wrap: normal;
-        }
-
-        /* Override for very long links - force breaking */
-        #message-content a.long-link {
-            word-break: break-all !important;
-            white-space: normal !important;
-            overflow-wrap: break-word !important;
+            display: inline;
         }
 
         /* Allow text after links to wrap normally */
@@ -120,8 +102,8 @@ COMMON ISSUES:
             word-break: break-word;
         }
 
-        /* Remove the old restrictive link rules */
-        /* #message-content a,
+        /* Special handling for URLs and links to prevent awkward breaks */
+        #message-content a,
         #message-content [href],
         #message-content .url,
         .link-no-break {
@@ -129,7 +111,7 @@ COMMON ISSUES:
             white-space: nowrap !important;
             overflow-wrap: normal !important;
             display: inline !important;
-        } */
+        }
 
         /* Allow the container to wrap more naturally */
         .flex-nowrap {
@@ -138,7 +120,7 @@ COMMON ISSUES:
 
         /* Ensure content doesn't expand unnecessarily with smooth transitions */
         #widget-container {
-            display: inline-block;
+            display: inline-flex;
             transition: width 0.4s ease-in-out, height 0.4s ease-in-out;
         }
 
@@ -375,18 +357,18 @@ COMMON ISSUES:
 
     <div id="widget-container">
         <div id="pinned-container">
-            <div class="absolute w-full empty:hidden" style="padding-top: 6px; padding-bottom: 6px;">
-                <div class="relative flex h-fit w-full flex-col gap-1.5 transition-[padding-left,padding-right] empty:hidden" style="padding-left: 8px; padding-right: 8px;">
-                    <div data-testid="pinned-message-modal" class="z-absolute w-full" style="transform: none;">
-                        <div class="bg-shade-lower border-surface-tint w-full flex-col gap-2 rounded border-2 border-solid pb-1.5 pl-[9px] pr-[3px] pt-[3px]">
-                            <div class="flex items-center justify-between">
+            <div class="absolute w-auto empty:hidden" style="padding-top: 6px; padding-bottom: 6px;">
+                <div class="relative flex h-fit w-auto flex-col gap-1.5 transition-[padding-left,padding-right] empty:hidden" style="padding-left: 8px; padding-right: 8px;">
+                    <div data-testid="pinned-message-modal" class="z-absolute w-auto" style="transform: none;">
+                        <div class="bg-shade-lower border-surface-tint w-auto flex-col gap-2 rounded border-2 border-solid pb-1.5 pl-[6px] pr-[6px] pt-[3px]">
+                            <div class="flex items-center justify-start">
                                 <div class="text-neutral inline-flex flex-wrap items-center gap-1 text-xs font-semibold leading-[1.125rem]" data-testid="sent-by">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 32 32" class="size-3">
                                         <path d="M25 17C24.997 14.406 23.348 12.198 21.042 11.363L21 11.35V3.85C22.732 3.392 23.989 1.844 24 0.001V0H8C8.001 1.853 9.262 3.41 10.972 3.864L11 3.87V11.37C8.658 12.215 7.012 14.414 7 16.999V19.5H14V28.5L16 32L18 28.5V19.5H25V17Z"></path>
                                     </svg>
                                     Sent by 
                                     <div class="inline-flex min-w-0 flex-nowrap items-center rounded betterhover:hover:bg-[#474f54] cursor-pointer transition-colors duration-150 ease-out active:bg-[#474f54AA]">
-                                        <div class="flex items-center gap-1 self-center pr-1" id="user-badge-container"></div>
+                                        <div class="flex items-center gap-1 self-center" id="user-badge-container"></div>
                                         <button class="inline font-bold" id="sender" title="">Unknown</button>
                                     </div>
                                 </div>
@@ -409,7 +391,7 @@ COMMON ISSUES:
                                     </button>
                                 </div>
                             </div>
-                            <div class="flex flex-row flex-wrap justify-between gap-1" style="opacity: 1; align-self: end;">
+                            <div class="flex flex-row flex-wrap justify-start gap-1" style="opacity: 1; align-self: end;">
                                 <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold" id="message-content">No message</div>
                                 <button class="group relative box-border flex shrink-0 grow-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-semibold ring-0 transition-all focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none [&_svg]:size-[1em] bg-transparent focus-visible:outline-grey-300 text-white [&_svg]:fill-current betterhover:hover:bg-surface-tint lg:data-[state=open]:bg-surface-tint data-[state=active]:bg-surface-tint disabled:text-grey-600 disabled:bg-grey-1000 size-8 text-sm leading-none" data-state="closed" data-testid="pinned-expand-button">
                                     <svg width="32" height="32" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg" class="transition-transform rotate-90">
@@ -745,11 +727,7 @@ COMMON ISSUES:
                     let cleanUrl = match.replace(/[.,:;!?]$/, '');
                     let trailingPunc = match.length > cleanUrl.length ? match.slice(-1) : '';
                     
-                    // Check if the link is over 50 characters
-                    const isLongLink = cleanUrl.length > 50;
-                    const linkClass = isLongLink ? 'long-link' : '';
-                    
-                    return `<a href="${cleanUrl}" target="_blank" class="${linkClass}" style="color: #53fc18;">${cleanUrl}</a>${trailingPunc}`;
+                    return `<a href="${cleanUrl}" target="_blank" class="link-no-break" style="word-break: keep-all; white-space: nowrap; color: #53fc18;">${cleanUrl}</a>${trailingPunc}`;
                 });
 
                 // Second, replace [emote:ID:NAME] with actual emote images
