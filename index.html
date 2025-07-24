@@ -68,9 +68,13 @@ COMMON ISSUES:
         [data-testid="pinned-expand-button"],
         [data-testid="unpin-button"],
         [data-testid="unpin-button"] + button,
+        button[data-state="closed"],
         /* Hide the three-dots menu button by targeting its specific SVG path */
         button:has(svg path[d*="M19 4H13V10H19V4Z"]) {
             display: none !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         /* Make widget width dynamic by overriding w-full classes */
@@ -391,8 +395,8 @@ COMMON ISSUES:
                                     </button>
                                 </div>
                             </div>
-                            <div class="flex flex-row flex-wrap justify-start gap-1" style="opacity: 1; align-self: end;">
-                                <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold" id="message-content">No message</div>
+                            <div class="flex flex-row flex-wrap justify-start gap-0" style="opacity: 1; align-self: end; width: 100%;">
+                                <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold w-full" id="message-content">No message</div>
                                 <button class="group relative box-border flex shrink-0 grow-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-semibold ring-0 transition-all focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none [&_svg]:size-[1em] bg-transparent focus-visible:outline-grey-300 text-white [&_svg]:fill-current betterhover:hover:bg-surface-tint lg:data-[state=open]:bg-surface-tint data-[state=active]:bg-surface-tint disabled:text-grey-600 disabled:bg-grey-1000 size-8 text-sm leading-none" data-state="closed" data-testid="pinned-expand-button">
                                     <svg width="32" height="32" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg" class="transition-transform rotate-90">
                                         <path d="M9 25.804L18.7962 16L9 6.19598L11.2038 4L23.2038 16L11.2038 28L9 25.804Z" fill="current"></path>
