@@ -55,8 +55,8 @@ COMMON ISSUES:
 
         #widget-container {
             min-width: 0px;
-            width: max-content;
-            max-width: calc(60ch + 32px); /* 80 chars + padding */
+            max-width: 335px;
+            width: fit-content;
             min-height: 77px;
             position: fixed;
             top: 20px;
@@ -68,28 +68,24 @@ COMMON ISSUES:
         [data-testid="pinned-expand-button"],
         [data-testid="unpin-button"],
         [data-testid="unpin-button"] + button,
-        button[data-state="closed"],
         /* Hide the three-dots menu button by targeting its specific SVG path */
         button:has(svg path[d*="M19 4H13V10H19V4Z"]) {
             display: none !important;
-            width: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
 
         /* Make widget width dynamic by overriding w-full classes */
         #pinned-container,
         #pinned-container .w-full {
-            width: auto !important;
+            width: fit-content !important;
         }
 
         /* Ensure proper text wrapping for long messages with smooth transitions */
         #message-content {
             word-wrap: break-word;
-            word-break: normal;
+            word-break: break-word;
             white-space: pre-wrap;
-            max-width: 60ch; /* Roughly 80 characters */
-            overflow-wrap: break-word;
+            max-width: 100%;
+            overflow-wrap: anywhere;
             hyphens: none;
             transition: width 0.4s ease-in-out, height 0.4s ease-in-out, padding 0.4s ease-in-out;
         }
@@ -124,7 +120,7 @@ COMMON ISSUES:
 
         /* Ensure content doesn't expand unnecessarily with smooth transitions */
         #widget-container {
-            display: inline-flex;
+            display: inline-block;
             transition: width 0.4s ease-in-out, height 0.4s ease-in-out;
         }
 
@@ -276,6 +272,7 @@ COMMON ISSUES:
         .absolute { position: absolute; }
         .relative { position: relative; }
         .w-full { width: 100%; }
+        .w-fit { width: fit-content; }
         .h-fit { height: fit-content; }
         .flex { display: flex; }
         .flex-col { flex-direction: column; }
@@ -285,6 +282,7 @@ COMMON ISSUES:
         .items-center { align-items: center; }
         .items-baseline { align-items: baseline; }
         .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
         .gap-1 { gap: 0.25rem; }
         .gap-1\.5 { gap: 0.375rem; }
         .gap-2 { gap: 0.5rem; }
@@ -292,11 +290,15 @@ COMMON ISSUES:
         .self-center { align-self: center; }
         .shrink-0 { flex-shrink: 0; }
         .grow-0 { flex-grow: 0; }
+        .pl-1 { padding-left: 0.25rem; }
         .pr-1 { padding-right: 0.25rem; }
         .pb-1\.5 { padding-bottom: 0.375rem; }
         .pl-\[9px\] { padding-left: 9px; }
         .pr-\[3px\] { padding-right: 3px; }
+        .pr-\[9px\] { padding-right: 9px; }
         .pt-\[3px\] { padding-top: 3px; }
+        .pt-\[6px\] { padding-top: 6px; }
+        .pb-\[6px\] { padding-bottom: 6px; }
         .rounded { border-radius: 0.25rem; }
         .border-2 { border-width: 2px; }
         .border-solid { border-style: solid; }
@@ -361,18 +363,18 @@ COMMON ISSUES:
 
     <div id="widget-container">
         <div id="pinned-container">
-            <div class="absolute w-auto empty:hidden" style="padding-top: 6px; padding-bottom: 6px;">
-                <div class="relative flex h-fit w-auto flex-col gap-1.5 transition-[padding-left,padding-right] empty:hidden" style="padding-left: 8px; padding-right: 8px;">
-                    <div data-testid="pinned-message-modal" class="z-absolute w-auto" style="transform: none;">
-                        <div class="bg-shade-lower border-surface-tint w-auto flex-col gap-2 rounded border-2 border-solid pb-1.5 pl-[6px] pr-[6px] pt-[3px]">
-                            <div class="flex items-center justify-start">
+            <div class="absolute w-fit empty:hidden">
+                <div class="relative flex h-fit w-fit flex-col gap-1.5 transition-[padding-left,padding-right] empty:hidden">
+                    <div data-testid="pinned-message-modal" class="z-absolute w-fit" style="transform: none;">
+                        <div class="bg-shade-lower border-surface-tint w-fit flex flex-col gap-2 rounded border-2 border-solid pb-[6px] pl-[9px] pr-[9px] pt-[6px]">
+                            <div class="flex items-center justify-between">
                                 <div class="text-neutral inline-flex flex-wrap items-center gap-1 text-xs font-semibold leading-[1.125rem]" data-testid="sent-by">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="white" viewBox="0 0 32 32" class="size-3">
                                         <path d="M25 17C24.997 14.406 23.348 12.198 21.042 11.363L21 11.35V3.85C22.732 3.392 23.989 1.844 24 0.001V0H8C8.001 1.853 9.262 3.41 10.972 3.864L11 3.87V11.37C8.658 12.215 7.012 14.414 7 16.999V19.5H14V28.5L16 32L18 28.5V19.5H25V17Z"></path>
                                     </svg>
                                     Sent by 
                                     <div class="inline-flex min-w-0 flex-nowrap items-center rounded betterhover:hover:bg-[#474f54] cursor-pointer transition-colors duration-150 ease-out active:bg-[#474f54AA]">
-                                        <div class="flex items-center gap-1 self-center" id="user-badge-container"></div>
+                                        <div class="flex items-center gap-1 self-center pl-1 pr-1" id="user-badge-container"></div>
                                         <button class="inline font-bold" id="sender" title="">Unknown</button>
                                     </div>
                                 </div>
@@ -395,8 +397,8 @@ COMMON ISSUES:
                                     </button>
                                 </div>
                             </div>
-                            <div class="flex flex-row flex-wrap justify-start gap-0" style="opacity: 1; align-self: end; width: 100%;">
-                                <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold w-full" id="message-content">No message</div>
+                            <div class="flex flex-row flex-wrap justify-center gap-1" style="opacity: 1; align-self: center;">
+                                <div data-testid="pinned-message-content" class="[&>a:hover]:text-primary min-w-0 break-words text-sm font-semibold" id="message-content">No message</div>
                                 <button class="group relative box-border flex shrink-0 grow-0 select-none items-center justify-center gap-2 whitespace-nowrap rounded font-semibold ring-0 transition-all focus-visible:outline-none active:scale-[0.95] disabled:pointer-events-none [&_svg]:size-[1em] bg-transparent focus-visible:outline-grey-300 text-white [&_svg]:fill-current betterhover:hover:bg-surface-tint lg:data-[state=open]:bg-surface-tint data-[state=active]:bg-surface-tint disabled:text-grey-600 disabled:bg-grey-1000 size-8 text-sm leading-none" data-state="closed" data-testid="pinned-expand-button">
                                     <svg width="32" height="32" viewBox="0 0 32 32" fill="white" xmlns="http://www.w3.org/2000/svg" class="transition-transform rotate-90">
                                         <path d="M9 25.804L18.7962 16L9 6.19598L11.2038 4L23.2038 16L11.2038 28L9 25.804Z" fill="current"></path>
